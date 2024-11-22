@@ -19,7 +19,31 @@ client.once("ready", async () => {
 	const embedder = await import("./embedders/spotify/track");
 	embedders.push(embedder.default);
 	console.log("Loaded all embedders!");
-	await parse("hi");
+});
+
+client.on("messageCreate", async message => {
+	if (message.author.bot || message.author.id === client.user.id) return;
+	const embeds = await parse(message.content);
+	if (embeds.length === 0) return;
+
+	await message.edit({
+		flags: 4
+	});
+	await client.rest.channels.createMessage(message.channelID, {
+		embeds,
+		messageReference: {
+			channelID: message.channelID,
+			guildID: message.guildID || undefined,
+			messageID: message.id
+		}
+	});
+});
+
+process.on("uncaughtException", e => {
+	console.error("💢 Uncaught exception:", e);
+});
+process.on("unhandledRejection", e => {
+	console.error("💢 Unhandled rejection:", e);
 });
 
 client.connect();

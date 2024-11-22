@@ -7,5 +7,5 @@ export type Embedder = {
 		icon?: string;
 	};
 	matches: RegExp[];
-	generator: (match: string) => Embed;
+	generator: (match: RegExpExecArray) => Promise<Embed>;
 };
