@@ -2,6 +2,7 @@ import { getAverageColor } from "fast-average-color-node";
 import { defineEmbedder } from "../../utils/definers";
 import { getFormattedTime } from "../../utils/durations";
 import { getSpotifyToken } from "../../utils/spotifyAuth";
+import { e, f } from "../../utils/formatting";
 
 export default defineEmbedder({
 	linkType: "Track",
@@ -43,10 +44,10 @@ export default defineEmbedder({
 			thumbnail: {
 				url: res.album.images[0].url
 			},
-			description: `<:albumcustom6:1310267827617271870> **\` Album \`** [${res.album.name}](${res.album.external_urls.spotify})
-			
-			> -# ${getFormattedTime(res.duration_ms)} • ${res.album.release_date}
-			> -# [View artist](${res.artists[0].external_urls.spotify})`,
+			description: `${await f("album", "Album", `[${res.album.name}](${res.album.external_urls.spotify})`)}
+			${await f("duration", "Duration", getFormattedTime(res.duration_ms))}			
+			${await f("release_date", "Release date", res.album.release_date)}
+> -# [View artist](${res.artists[0].external_urls.spotify})`,
 			color: parseInt(averageAlbumColor.hex.slice(1), 16)
 		};
 	}
