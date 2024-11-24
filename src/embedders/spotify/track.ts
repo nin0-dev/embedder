@@ -43,9 +43,10 @@ export default defineEmbedder({
 			thumbnail: {
 				url: res.album.images[0].url
 			},
-			description: `on [${res.album.name}](${res.album.external_urls.spotify})
+			description: `<:albumcustom6:1310267827617271870> **\` Album \`** [${res.album.name}](${res.album.external_urls.spotify})
 			
-			> -# ${getFormattedTime(res.duration_ms)} • ${res.album.release_date}`,
+			> -# ${getFormattedTime(res.duration_ms)} • ${res.album.release_date}
+			> -# [View artist](${res.artists[0].external_urls.spotify})`,
 			color: parseInt(averageAlbumColor.hex.slice(1), 16)
 		};
 	}
