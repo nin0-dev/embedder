@@ -1,6 +1,14 @@
-import { Client } from "oceanic.js";
+import {
+	ApplicationCommandOptionTypes,
+	ApplicationCommandTypes,
+	ApplicationIntegrationTypes,
+	Client,
+	InteractionContextTypes,
+	InteractionTypes,
+	MessageFlags
+} from "oceanic.js";
 import { Embedder } from "./utils/types";
-import { parse } from "./parser";
+import { parse, parse } from "./parser";
 import { readdir } from "fs/promises";
 import { Yapper } from "./utils/Yapper";
 import { File } from "oceanic.js";
@@ -36,6 +44,31 @@ client.once("ready", async () => {
 		);
 	}
 	yapper.info("Loaded all embedders!");
+
+	await client.application.bulkEditGlobalCommands([
+		{
+			name: "embed",
+			description: "Embed a link",
+			type: ApplicationCommandTypes.CHAT_INPUT,
+			contexts: [
+				InteractionContextTypes.BOT_DM,
+				InteractionContextTypes.GUILD,
+				InteractionContextTypes.PRIVATE_CHANNEL
+			],
+			integrationTypes: [
+				ApplicationIntegrationTypes.GUILD_INSTALL,
+				ApplicationIntegrationTypes.USER_INSTALL
+			],
+			options: [
+				{
+					name: "link",
+					description: "The link to embed",
+					type: ApplicationCommandOptionTypes.STRING,
+					required: true
+				}
+			]
+		}
+	]);
 });
 
 client.on("messageCreate", async message => {
@@ -65,6 +98,47 @@ client.on("messageCreate", async message => {
 		},
 		files
 	});
+});
+
+client.on("interactionCreate", async i => {
+	switch (i.type) {
+		case InteractionTypes.APPLICATION_COMMAND: {
+			if (i.data.type === ApplicationCommandTypes.CHAT_INPUT) {
+				switch (i.data.name) {
+					case "embed": {
+						const response = await parse(
+							i.data.options.getString("link") || ""
+						);
+						if (response.embeds.length === 0)
+							return i.createMessage({
+								content:
+									"No embed has been found for this link!",
+								flags: MessageFlags.EPHEMERAL
+							});
+
+						i.defer();
+
+						const files: File[] = [];
+
+						for (const file of response.attachments) {
+							const content = await fetch(file.url);
+							files.push({
+								name: file.name,
+								contents: Buffer.from(
+									await content.arrayBuffer()
+								)
+							});
+						}
+
+						await i.createFollowup({
+							embeds: response.embeds,
+							files
+						});
+					}
+				}
+			}
+		}
+	}
 });
 
 process.on("uncaughtException", e => {
