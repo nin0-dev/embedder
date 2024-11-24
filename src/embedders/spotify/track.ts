@@ -35,7 +35,6 @@ export default defineEmbedder({
 		const averageAlbumColor = await getAverageColor(
 			res.album.images[0].url
 		);
-		yapper.debug(res);
 		return {
 			embed: {
 				author: {
@@ -51,8 +50,9 @@ export default defineEmbedder({
 				description: `${await f("album", "Album", `[${res.album.name}](${res.album.external_urls.spotify})`)}
 ${await f("duration", "Duration", getFormattedTime(res.duration_ms))}
 ${await f("release_date", "Release date", res.album.release_date)}
+${await f("popularity", "Popularity", `${res.popularity}%`)}
 	
-> -# [View artist](${res.artists[0].external_urls.spotify})`,
+> -# [View artist ${await e("external")}](${res.artists[0].external_urls.spotify})`,
 				color: parseInt(averageAlbumColor.hex.slice(1), 16)
 			},
 			attachment: {

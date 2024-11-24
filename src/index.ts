@@ -46,7 +46,6 @@ client.on("messageCreate", async message => {
 	const files: File[] = [];
 
 	for (const file of response.attachments) {
-		yapper.debug(response.attachments);
 		const content = await fetch(file.url);
 		files.push({
 			name: file.name,
