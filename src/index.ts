@@ -3,6 +3,7 @@ import { Embedder } from "./utils/types";
 import { parse } from "./parser";
 import { readdir } from "fs/promises";
 import { Yapper } from "./utils/Yapper";
+import { File } from "oceanic.js";
 
 export const client = new Client({
 	auth: `Bot ${process.env.BOT_TOKEN}`,
@@ -39,19 +40,31 @@ client.once("ready", async () => {
 
 client.on("messageCreate", async message => {
 	if (message.author.bot || message.author.id === client.user.id) return;
-	const embeds = await parse(message.content);
-	if (embeds.length === 0) return;
+	const response = await parse(message.content);
+	if (response.embeds.length === 0) return;
+
+	const files: File[] = [];
+
+	for (const file of response.attachments) {
+		yapper.debug(response.attachments);
+		const content = await fetch(file.url);
+		files.push({
+			name: file.name,
+			contents: Buffer.from(await content.arrayBuffer())
+		});
+	}
 
 	await message.edit({
 		flags: 4
 	});
 	await client.rest.channels.createMessage(message.channelID, {
-		embeds,
+		embeds: response.embeds,
 		messageReference: {
 			channelID: message.channelID,
 			guildID: message.guildID || undefined,
 			messageID: message.id
-		}
+		},
+		files
 	});
 });
 
