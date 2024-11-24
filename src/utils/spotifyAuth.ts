@@ -1,3 +1,5 @@
+import { yapper } from "..";
+
 let accessToken: {
 	token: string;
 	expiresAt: number;
@@ -14,7 +16,9 @@ export async function getSpotifyToken(): Promise<string> {
 		body: `grant_type=client_credentials&client_id=${process.env.SPOTIFY_CLIENT_ID}&client_secret=${process.env.SPOTIFY_CLIENT_SECRET}`,
 		method: "POST"
 	});
-	if (!req.ok) throw req;
+	if (!req.ok) {
+		yapper.error(await req.json());
+	}
 
 	const res = await req.json();
 	accessToken = {

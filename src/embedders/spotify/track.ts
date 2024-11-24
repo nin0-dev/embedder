@@ -32,9 +32,15 @@ export default defineEmbedder({
 		);
 		const artistRes = await artistReq.json();
 
-		const averageAlbumColor = await getAverageColor(
-			res.album.images[0].url
-		);
+		const getAverageAlbumColor = async () => {
+			try {
+				const h = await getAverageColor(res.album.images[0].url);
+				return parseInt(h.hex.slice(1), 16);
+			} catch {
+				return 0x21d35f;
+			}
+		};
+		const averageAlbumColor = await getAverageAlbumColor();
 		return {
 			embed: {
 				author: {
@@ -53,7 +59,7 @@ ${await f("release_date", "Release date", res.album.release_date)}
 ${await f("popularity", "Popularity", `${res.popularity}%`)}
 	
 > -# [View artist ${await e("external")}](${res.artists[0].external_urls.spotify})`,
-				color: parseInt(averageAlbumColor.hex.slice(1), 16)
+				color: averageAlbumColor
 			},
 			attachment: {
 				name: `preview_${res.name.replaceAll(" ", "_")}.mp3`,

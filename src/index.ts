@@ -8,7 +8,7 @@ import {
 	MessageFlags
 } from "oceanic.js";
 import { Embedder } from "./utils/types";
-import { parse, parse } from "./parser";
+import { parse } from "./parser";
 import { readdir } from "fs/promises";
 import { Yapper } from "./utils/Yapper";
 import { File } from "oceanic.js";
@@ -76,8 +76,26 @@ client.on("messageCreate", async message => {
 	const response = await parse(message.content);
 	if (response.embeds.length === 0) return;
 
-	const files: File[] = [];
+	await message.edit({
+		flags: 4
+	});
+	const sentMessage = await client.rest.channels.createMessage(
+		message.channelID,
+		{
+			content:
+				response.attachments.length === 0
+					? ""
+					: "> -# Loading attachments...",
+			embeds: response.embeds,
+			messageReference: {
+				channelID: message.channelID,
+				guildID: message.guildID || undefined,
+				messageID: message.id
+			}
+		}
+	);
 
+	const files: File[] = [];
 	for (const file of response.attachments) {
 		const content = await fetch(file.url);
 		files.push({
@@ -85,17 +103,8 @@ client.on("messageCreate", async message => {
 			contents: Buffer.from(await content.arrayBuffer())
 		});
 	}
-
-	await message.edit({
-		flags: 4
-	});
-	await client.rest.channels.createMessage(message.channelID, {
-		embeds: response.embeds,
-		messageReference: {
-			channelID: message.channelID,
-			guildID: message.guildID || undefined,
-			messageID: message.id
-		},
+	if (files.length === 0) return;
+	await sentMessage.edit({
 		files
 	});
 });
@@ -106,20 +115,24 @@ client.on("interactionCreate", async i => {
 			if (i.data.type === ApplicationCommandTypes.CHAT_INPUT) {
 				switch (i.data.name) {
 					case "embed": {
+						i.defer();
 						const response = await parse(
 							i.data.options.getString("link") || ""
 						);
 						if (response.embeds.length === 0)
-							return i.createMessage({
+							return i.createFollowup({
 								content:
-									"No embed has been found for this link!",
-								flags: MessageFlags.EPHEMERAL
+									"No embed has been found for this link!"
 							});
 
-						i.defer();
-
+						const sentMessage = await i.createFollowup({
+							content:
+								response.attachments.length === 0
+									? ""
+									: "> -# Loading attachments...",
+							embeds: response.embeds
+						});
 						const files: File[] = [];
-
 						for (const file of response.attachments) {
 							const content = await fetch(file.url);
 							files.push({
@@ -129,11 +142,13 @@ client.on("interactionCreate", async i => {
 								)
 							});
 						}
-
-						await i.createFollowup({
-							embeds: response.embeds,
-							files
-						});
+						if (files.length === 0) return;
+						await client.rest.interactions.editFollowupMessage(
+							client.application.id,
+							sentMessage.interaction.token,
+							sentMessage.message.id,
+							{ files, content: "" }
+						);
 					}
 				}
 			}
@@ -145,7 +160,7 @@ process.on("uncaughtException", e => {
 	yapper.error(e);
 });
 process.on("unhandledRejection", e => {
-	console.error("💢 Unhandled rejection:", e);
+	yapper.error(e);
 });
 
 client.connect();
